@@ -1,8 +1,10 @@
 name: Build and Deploy to Minikube
+
 on:
   push:
     branches:
       - main
+
 jobs:
   build-deploy:
     runs-on: self-hosted
@@ -10,22 +12,30 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Docker to use Minikube's environment
+    - name: Set up Docker to use Minikube's environment (Windows)
+      shell: pwsh
       run: |
-        echo "Configuring Docker to use Minikube's daemon..."
-        eval $(minikube docker-env)
-        
+        Write-Output "Configuring Docker to use Minikube's daemon..."
+        & minikube -p minikube docker-env --shell=cmd | Invoke-Expression
+
     - name: Build Docker images
+      shell: pwsh
       run: |
         docker build -t i222683abdullah/app-frontend:latest -f Dockerfile.frontend .
         docker build -t i222683abdullah/app-backend:latest -f Dockerfile .
+
     - name: Login to Docker Hub
+      shell: pwsh
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
     - name: Push Docker images to Docker Hub
+      shell: pwsh
       run: |
         docker push i222683abdullah/app-frontend:latest
         docker push i222683abdullah/app-backend:latest
+
     - name: Deploy to Minikube
+      shell: pwsh
       run: |
         kubectl apply -f deployment-frontend.yaml
         kubectl apply -f service-frontend.yaml
