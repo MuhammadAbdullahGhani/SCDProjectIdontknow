@@ -14,6 +14,7 @@ jobs:
       run: |
         echo "Configuring Docker to use Minikube's daemon..."
         eval $(minikube docker-env)
+        
     - name: Build Docker images
       run: |
         docker build -t i222683abdullah/app-frontend:latest -f Dockerfile.frontend .
