@@ -16,6 +16,8 @@ jobs:
       shell: powershell
       run: |
         Write-Output "Configuring Docker to use Minikube's daemon..."
+        $minikubePath = Get-Command minikube -ErrorAction SilentlyContinue
+        if (-not $minikubePath) { throw "minikube not found in PATH" }
         $envVars = & minikube -p minikube docker-env --shell powershell
         if ($LASTEXITCODE -ne 0) { throw "minikube docker-env failed" }
         $envVars | ForEach-Object { Invoke-Expression $_ }
