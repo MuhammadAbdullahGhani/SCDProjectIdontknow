@@ -17,6 +17,7 @@ jobs:
       run: |
         Write-Output "Configuring Docker to use Minikube's daemon..."
         $envVars = & minikube -p minikube docker-env --shell powershell
+        if ($LASTEXITCODE -ne 0) { throw "minikube docker-env failed" }
         $envVars | ForEach-Object { Invoke-Expression $_ }
 
     - name: Build Docker images
@@ -24,21 +25,26 @@ jobs:
       run: |
         docker build -t i222683abdullah/app-frontend:latest -f Dockerfile.frontend .
         docker build -t i222683abdullah/app-backend:latest -f Dockerfile .
+        if ($LASTEXITCODE -ne 0) { throw "Docker build failed" }
 
     - name: Login to Docker Hub
       shell: powershell
-      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      run: |
+        echo "0d37aba1" | docker login -u "i222683abdullah" --password-stdin
+        if ($LASTEXITCODE -ne 0) { throw "Docker login failed" }
 
     - name: Push Docker images to Docker Hub
       shell: powershell
       run: |
         docker push i222683abdullah/app-frontend:latest
         docker push i222683abdullah/app-backend:latest
+        if ($LASTEXITCODE -ne 0) { throw "Docker push failed" }
 
     - name: Deploy to Minikube
       shell: powershell
       run: |
-        kubectl apply -f deployment-frontend.yaml
-        kubectl apply -f service-frontend.yaml
-        kubectl apply -f deployment-backend.yaml
-        kubectl apply -f service-backend.yaml
+        kubectl apply -f deployment-frontend.yaml -n my-app-ns
+        kubectl apply -f service-frontend.yaml -n my-app-ns
+        kubectl apply -f deployment-backend.yaml -n my-app-ns
+        kubectl apply -f service-backend.yaml -n my-app-ns
+        if ($LASTEXITCODE -ne 0) { throw "Kubernetes deployment failed" }
